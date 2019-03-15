@@ -4,25 +4,19 @@
 #include <elapsedMillis.h>
 #include <Separador.h>
 
-
 SoftwareSerial GSM_Serial(7, 8); // Declaramos los pines RX(8) y TX(9) que vamos a usar
 LiquidCrystal_I2C lcd(0x27,20,4);  // LCD address = 0x27, 20X4 display, SCL = A5, SDA = A4
 #define DHTPIN 2
 DHT dht(DHTPIN, DHT11);
-elapsedMillis TiempoTranscurrido;
+elapsedMillis tiempoTranscurrido;
 
 Separador s;
 
-String datos;
-int temperatura, humedad;
 unsigned long intervalo = 900000;
-int tempMin, tempMax, humMin, humMax, estadoSwitch;
-String ubicacion = "Cuarto frio no. 1"; 
-String AlarmaBajaTemp, AlarmaAltaTemp, AlarmaBajaHum, AlarmaAltaHum;
+int temperatura, humedad, tempMin, tempMax, humMin, humMax, estadoSwitch;
+String ubicacion = "Cuarto frio no. 1", datos, AlarmaBajaTemp, AlarmaAltaTemp, AlarmaBajaHum, AlarmaAltaHum;
 
-
-
-void setup()
+void setup() 
 {
   Serial.begin(115200); //Configuracion comunicacion serie a 115200 Bs
  
@@ -77,7 +71,6 @@ void loop()
       estadoSwitch = s.separa(datos, '*', 5).toInt();
   }
 
-  
   Serial.println(tempMin);
   Serial.println(tempMax);
   Serial.println(humMin);
@@ -93,10 +86,10 @@ void loop()
         GSM_Serial.println();               // Enviamos un fin de linea
 }
 
-
 temperatura = dht.readTemperature();
 humedad = dht.readHumidity();
 
+//Muestra en el display la temperatura y la humedad relativa del cuarto frio y los "Set-Points" establecidos.
 lcd.setCursor(0,0);
 lcd.print("Temp. " + String(temperatura) + (char)223 + String("C Hum. ") + String(humedad) + "%");
 lcd.setCursor(0,1);
@@ -111,18 +104,17 @@ if(estadoSwitch == 1){
   Alarma();
   }
 
-  if(estadoSwitch == 0){
+if(estadoSwitch == 0){
     digitalWrite(3,!0);
     digitalWrite(4,!0);
     digitalWrite(5,!0);
     digitalWrite(6,!0);
-    }
+  }
 
-
-  if (TiempoTranscurrido >= intervalo) 
+  if (tiempoTranscurrido >= intervalo) 
   {       
     EnviaSMS();
-    TiempoTranscurrido = 0;       // reset the counter to 0 so the counting starts over...
+    tiempoTranscurrido = 0;       // reset the counter to 0 so the counting starts over...
   }
   
 }
