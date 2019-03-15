@@ -96,54 +96,15 @@ void loop()
 
 temperatura = dht.readTemperature();
 humedad = dht.readHumidity();
+
 lcd.setCursor(0,0);
-lcd.print("Temp.");
-lcd.setCursor(6,0);
-lcd.print(temperatura);
-lcd.setCursor(8,0);
-lcd.print((char)223);
-lcd.setCursor(9,0);
-lcd.print("C");
-lcd.setCursor(11,0);
-lcd.print("Hum.");
-lcd.setCursor(16,0);
-lcd.print(humedad);
-lcd.setCursor(18,0);
-lcd.print("%");
+lcd.print("Temp. " + String(temperatura) + (char)223 + String("C Hum. ") + String(humedad) + "%");
 lcd.setCursor(0,1);
 lcd.print("SP Temp. | SP Hum.");
 lcd.setCursor(0,2);
-lcd.print("Min.");
-lcd.setCursor(5,2);
-lcd.print(tempMin);
-lcd.setCursor(7,2);
-lcd.print((char)223);
-lcd.setCursor(8,2);
-lcd.print("C");
-lcd.setCursor(9,2);
-lcd.print("|");
-lcd.setCursor(11,2);
-lcd.print("Min.");
-lcd.setCursor(16,2);
-lcd.print(humMin);
-lcd.setCursor(18,2);
-lcd.print("%");
+lcd.print("Min. " + String(tempMin) + (char)223 + String("C| Min. ") + String(humMin) + String("%"));
 lcd.setCursor(0,3);
-lcd.print("Max.");
-lcd.setCursor(5,3);
-lcd.print(tempMax);
-lcd.setCursor(7,3);
-lcd.print((char)223);
-lcd.setCursor(8,3);
-lcd.print("C");
-lcd.setCursor(9,3);
-lcd.print("|");
-lcd.setCursor(11,3);
-lcd.print("Max.");
-lcd.setCursor(16,3);
-lcd.print(humMax);
-lcd.setCursor(18,3);
-lcd.print("%");
+lcd.print("Max. " + String(tempMax) + (char)223 + String("C| Max. ") + String(humMax) + String("%"));
 
 if(estadoSwitch == 1){
   controlOnOff();
