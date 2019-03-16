@@ -99,16 +99,16 @@ lcd.print("Min. " + String(tempMin) + (char)223 + String("C| Min. ") + String(hu
 lcd.setCursor(0,3);
 lcd.print("Max. " + String(tempMax) + (char)223 + String("C| Max. ") + String(humMax) + String("%"));
 
-if(estadoSwitch == 1){
+if(estadoSwitch){
   controlOnOff();
   Alarma();
   }
 
-if(estadoSwitch == 0){
-    digitalWrite(3,!0);
-    digitalWrite(4,!0);
-    digitalWrite(5,!0);
-    digitalWrite(6,!0);
+ else{
+  digitalWrite(3,!0);
+  digitalWrite(4,!0);
+  digitalWrite(5,!0);
+  digitalWrite(6,!0);
   }
 
   if (tiempoTranscurrido >= intervalo) 
