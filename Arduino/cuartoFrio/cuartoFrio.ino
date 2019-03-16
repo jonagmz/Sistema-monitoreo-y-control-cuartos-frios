@@ -161,23 +161,23 @@ digitalWrite(6,!1);
 }
 
 void Alarma(){
-  if(temperatura < tempMin || humedad < humMin){
-    AlarmaBajaTemp = "1";
-    AlarmaBajaHum = "1";
-    }
-
-    else{
-      AlarmaBajaTemp = "0";
-      AlarmaBajaHum = "0";
-      }
-
-if(temperatura > tempMax || humedad > humMax){
+  if(temperatura < tempMin){
+  AlarmaBajaTemp = "1";
+  }
+  else{ AlarmaBajaTemp = "0";}
+  
+  if(humedad < humMin){
+  AlarmaBajaHum = "1";
+  }
+  else{AlarmaBajaHum = "0";}
+  
+  if(temperatura > tempMax){
   AlarmaAltaTemp = "1";
+  }
+  else{AlarmaAltaTemp = "0";}
+  
+  if(humedad > humMax){
   AlarmaAltaHum = "1";
   }
-  else{
-    AlarmaAltaTemp = "0";
-    AlarmaAltaHum = "0";
-    }
-
-  }
+  else{AlarmaAltaHum = "0";}
+}
