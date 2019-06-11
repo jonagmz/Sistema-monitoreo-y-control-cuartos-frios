@@ -9,7 +9,6 @@ LiquidCrystal_I2C lcd(0x27, 20, 4); // LCD address = 0x27, 20X4 display, SCL = A
 #define DHTPIN 2
 DHT dht(DHTPIN, DHT11);
 elapsedMillis tiempoTranscurrido;
-
 Separador s;
 
 unsigned long intervalo = 900000;
@@ -19,7 +18,6 @@ String ubicacion = "Cuarto frio no. 1", datos, AlarmaBajaTemp, AlarmaAltaTemp, A
 void setup()
 {
   Serial.begin(115200); //Configuracion comunicacion serie a 115200 Bs
-
   GSM_Serial.begin(9600);  //Configuracion serie Modulo GPRS SIM800L
   pinMode(3, OUTPUT);
   pinMode(4, OUTPUT);
@@ -53,6 +51,12 @@ void setup()
   delay(500);
   lcd.clear();
 
+  if(intervalo == "0"){
+    digitalWrite(LED,HIGH);
+  }
+  else{
+    digitalWrite(LED,LOW);
+  }
 }
 
 void loop()
