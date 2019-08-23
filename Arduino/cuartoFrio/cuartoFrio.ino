@@ -50,13 +50,6 @@ void setup()
   lcd.print("OK");
   delay(500);
   lcd.clear();
-
-  if(intervalo == "0"){
-    digitalWrite(LED,HIGH);
-  }
-  else{
-    digitalWrite(LED,LOW);
-  }
 }
 
 void loop()
