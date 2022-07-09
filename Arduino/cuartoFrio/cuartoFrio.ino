@@ -4,6 +4,8 @@
 #include <elapsedMillis.h>
 #include <Separador.h>
 
+#define DEV true
+
 SoftwareSerial GSM_Serial(7, 8); // Declaramos los pines RX(8) y TX(9) que vamos a usar
 LiquidCrystal_I2C lcd(0x27, 20, 4); // LCD address = 0x27, 20X4 display, SCL = A5, SDA = A4
 #define DHTPIN 2
@@ -13,7 +15,7 @@ Separador s;
 
 unsigned long intervalo = 900000;
 int temperatura, humedad, tempMin, tempMax, humMin, humMax, estadoSwitch;
-String ubicacion = "Cuarto frio no. 1", datos, AlarmaBajaTemp, AlarmaAltaTemp, AlarmaBajaHum, AlarmaAltaHum;
+String ubicacion = "Cuarto frio no. 1", datos, alarmaBajaTemp, alarmaAltaTemp, alarmaBajaHum, alarmaAltaHum;
 
 void setup()
 {
@@ -68,11 +70,13 @@ void loop()
       estadoSwitch = s.separa(datos, '*', 5).toInt();
     }
 
-    Serial.println(tempMin);
-    Serial.println(tempMax);
-    Serial.println(humMin);
-    Serial.println(humMax);
-    Serial.println(estadoSwitch);
+    #id DEV 
+      Serial.println(tempMin);
+      Serial.println(tempMax);
+      Serial.println(humMin);
+      Serial.println(humMax);
+      Serial.println(estadoSwitch);
+    #endif
 
   }
 
@@ -102,10 +106,9 @@ void loop()
   }
 
   else {
-    digitalWrite(3, !0);
-    digitalWrite(4, !0);
-    digitalWrite(5, !0);
-    digitalWrite(6, !0);
+    for (int i = 0; i < 7; i++) {
+      digitalWrite(i, !0);
+    }
   }
 
   if (tiempoTranscurrido >= intervalo)
@@ -143,46 +146,21 @@ void EnviaSMS() {
 }
 
 void controlOnOff() {
-  if (temperatura <= tempMin) {
-    digitalWrite(3, !0);
-    digitalWrite(4, !0);
-    digitalWrite(5, !0);
-    digitalWrite(6, !0);
+  if (temperatura <= tempMin) {  
+     for (int i = 0; i < 7; i++) {
+      digitalWrite(i, !0);
+    }
   }
   if (temperatura >= tempMax) {
-    digitalWrite(3, !1);
-    digitalWrite(4, !1);
-    digitalWrite(5, !1);
-    digitalWrite(6, !1);
+     for (int i = 0; i < 7; i++) {
+      digitalWrite(i, !1);
+    }
   }
 }
 
 void Alarma() {
-  if (temperatura < tempMin) {
-    AlarmaBajaTemp = "1";
-  }
-  else {
-    AlarmaBajaTemp = "0";
-  }
-
-  if (humedad < humMin) {
-    AlarmaBajaHum = "1";
-  }
-  else {
-    AlarmaBajaHum = "0";
-  }
-
-  if (temperatura > tempMax) {
-    AlarmaAltaTemp = "1";
-  }
-  else {
-    AlarmaAltaTemp = "0";
-  }
-
-  if (humedad > humMax) {
-    AlarmaAltaHum = "1";
-  }
-  else {
-    AlarmaAltaHum = "0";
-  }
+  alarmaBajaTemp = temperatura < tempMin ? "1" : "0";
+  alarmaBajaHum = humedad < humMin ? "1" : "0";
+  alarmaAltaTemp = temperatura > tempMax ? "1" : "0";
+  alarmaAltaHum = humedad > humMax ? "1" : "0";
 }
