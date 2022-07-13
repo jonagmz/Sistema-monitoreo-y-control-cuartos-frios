@@ -107,7 +107,7 @@ void loop()
 
   else {
     for (int i = 0; i < 7; i++) {
-      digitalWrite(i, !0);
+      digitalWrite(i, !LOW);
     }
   }
 
@@ -131,13 +131,13 @@ void EnviaSMS() {
   GSM_Serial.print(",");
   GSM_Serial.print(ubicacion);
   GSM_Serial.print(",");
-  GSM_Serial.print(AlarmaBajaTemp);
+  GSM_Serial.print(alarmaBajaTemp);
   GSM_Serial.print(",");
-  GSM_Serial.print(AlarmaAltaTemp);
+  GSM_Serial.print(alarmaAltaTemp);
   GSM_Serial.print(",");
-  GSM_Serial.print(AlarmaBajaHum);
+  GSM_Serial.print(alarmaBajaHum);
   GSM_Serial.print(",");
-  GSM_Serial.print(AlarmaAltaHum);
+  GSM_Serial.print(alarmaAltaHum);
   delay(500);
   GSM_Serial.print(char(26));                      // Enviamos el equivalente a Control+Z
   delay(500);                                    // Pequeña pausa
@@ -148,12 +148,12 @@ void EnviaSMS() {
 void controlOnOff() {
   if (temperatura <= tempMin) {  
      for (int i = 0; i < 7; i++) {
-      digitalWrite(i, !0);
+      digitalWrite(i, !LOW);
     }
   }
   if (temperatura >= tempMax) {
      for (int i = 0; i < 7; i++) {
-      digitalWrite(i, !1);
+      digitalWrite(i, !HIGH);
     }
   }
 }
