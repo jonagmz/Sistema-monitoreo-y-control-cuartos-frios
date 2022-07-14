@@ -19,8 +19,8 @@ String ubicacion = "Cuarto frio no. 1", datos, alarmaBajaTemp, alarmaAltaTemp, a
 
 void setup()
 {
-  Serial.begin(115200); //Configuracion comunicacion serie a 115200 Bs
-  GSM_Serial.begin(9600);  //Configuracion serie Modulo GPRS SIM800L
+  Serial.begin(115200); // Configuracion comunicacion serie a 115200 bps
+  GSM_Serial.begin(9600);  // Configuracion serie Modulo GPRS SIM800L
   pinMode(3, OUTPUT);
   pinMode(4, OUTPUT);
   pinMode(5, OUTPUT);
@@ -114,7 +114,7 @@ void loop()
   if (tiempoTranscurrido >= intervalo)
   {
     EnviaSMS();
-    tiempoTranscurrido = 0;       // reset the counter to 0 so the counting starts over...
+    tiempoTranscurrido = 0;       // reseteamos el tiempo transcurrido
   }
 
 }
@@ -124,25 +124,13 @@ void EnviaSMS() {
   GSM_Serial.print("AT+CMGF=1\r");  //Configura el modo texto para enviar o recibir mensajes
   delay(1000);
   GSM_Serial.println("AT+CMGS=\"+520000000000\"");  // Definimos el numero del destinatario en formato internacional
-  delay(1000);                                    // Pequeña pausa
-  GSM_Serial.print(temperatura);                 // Definimos el cuerpo del mensaje
-  GSM_Serial.print(",");
-  GSM_Serial.print(humedad);
-  GSM_Serial.print(",");
-  GSM_Serial.print(ubicacion);
-  GSM_Serial.print(",");
-  GSM_Serial.print(alarmaBajaTemp);
-  GSM_Serial.print(",");
-  GSM_Serial.print(alarmaAltaTemp);
-  GSM_Serial.print(",");
-  GSM_Serial.print(alarmaBajaHum);
-  GSM_Serial.print(",");
-  GSM_Serial.print(alarmaAltaHum);
+  delay(1000);                                  
+  GSM_Serial.print((String) temperatura + ',' + humedad + ',' + ubicacion + ',' + alarmaBajaTemp + ',' + alarmaAltaTemp + ',' alarmaBajaHum + ',' + alarmaAltaHum)
   delay(500);
   GSM_Serial.print(char(26));                      // Enviamos el equivalente a Control+Z
-  delay(500);                                    // Pequeña pausa
-  GSM_Serial.println("");                          // Enviamos un fin de linea
-  delay(100);                                    // Pequeña pausa
+  delay(500);                                   
+  GSM_Serial.println("");                        
+  delay(100);                                   
 }
 
 void controlOnOff() {
