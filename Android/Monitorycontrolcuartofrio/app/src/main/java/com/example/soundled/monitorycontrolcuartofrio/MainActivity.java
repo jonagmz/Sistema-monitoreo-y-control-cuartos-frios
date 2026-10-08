@@ -8,20 +8,28 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.text.InputType;
 import android.text.format.DateFormat;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -46,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
             if (error != null) {
                 Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
             } else {
-                mostrarUltimoReporte(false);
+                mostrarUltimoReporte(true);  // rellena los campos vacíos con la configuración del equipo
             }
         }
     };
@@ -62,8 +70,19 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        EdgeToEdge.enable(this, SystemBarStyle.dark(Color.TRANSPARENT));  // iconos claros sobre la barra azul
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        View contenido = findViewById(R.id.contenido);
+        // Desde Android 15 la app se dibuja detrás de las barras del sistema: se reserva su espacio.
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.raiz), (v, insets) -> {
+            Insets barras = insets.getInsets(WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.ime());
+            toolbar.setPadding(barras.left, barras.top, barras.right, 0);
+            contenido.setPadding(barras.left, 0, barras.right, barras.bottom);
+            return WindowInsetsCompat.CONSUMED;
+        });
         prefs = new Preferencias(this);
 
         txtTempAct = findViewById(R.id.txtTempAct);

@@ -48,11 +48,11 @@ int main() {
   printf("     reporte: %s\n", s.back().txt.c_str());
   CHECK(s.back().txt == "4.0,85.0,Cuarto frio no. 1,0,0,0,0,0,0,1,2,6,80,95", "formato compatible (7 campos originales + 7 nuevos)");
 
-  puts("4) Temperatura alta -> espera el tiempo mínimo de apagado del compresor y enfría");
+  puts("4) Temperatura alta -> espera el tiempo mínimo de apagado de las celdas y enfría");
   simTemp = 8.0; correr(5000);
-  CHECK(relesApagados(), "no arranca el compresor antes de 3 minutos desde el arranque");
+  CHECK(relesApagados(), "no enciende las celdas antes de 60 s desde el arranque");
   s = smsEnviados(); CHECK(s.back().num == AUT && s.back().txt.find(",0,1,0,0,") != std::string::npos, "envía SMS de alarma de temperatura alta al momento");
-  correr(3UL * 60 * 1000);
+  correr(60UL * 1000);
   CHECK(relesEncendidos(), "enciende los relés tras el tiempo mínimo");
   CHECK(lcd.rows[3].rfind("ALARMA T+", 0) == 0, "LCD muestra 'ALARMA T+'");
 
@@ -62,9 +62,9 @@ int main() {
   simTemp = 1.5; correr(5000);
   CHECK(relesApagados(), "apaga al bajar del mínimo");
   simTemp = 7.0; correr(30000);
-  CHECK(relesApagados(), "no vuelve a arrancar enseguida (protección del compresor)");
-  correr(3UL * 60 * 1000);
-  CHECK(relesEncendidos(), "vuelve a arrancar pasados 3 minutos");
+  CHECK(relesApagados(), "no vuelve a encender enseguida (protege las celdas y los relés)");
+  correr(60UL * 1000);
+  CHECK(relesEncendidos(), "vuelve a encender pasados 60 s");
 
   puts("6) Límite de SMS de alarma");
   simTemp = 4.0; correr(5000); size_t n0 = smsEnviados().size();

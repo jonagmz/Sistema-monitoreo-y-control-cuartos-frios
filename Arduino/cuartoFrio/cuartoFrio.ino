@@ -2,7 +2,7 @@
   Sistema de monitoreo y control de cuarto frío.
 
   Hardware: Arduino Uno, módulo GSM SIM800L (SoftwareSerial en pines 7 y 8), LCD I2C 20x4 (0x27),
-  sensor DHT en el pin 2 y 4 relés activos en LOW en los pines 3 a 6.
+  sensor DHT en el pin 2 y 4 relés activos en LOW en los pines 3 a 6 que alimentan las celdas Peltier.
 
   Protocolo SMS
   - Configuración (desde la app): "@*tempMin*tempMax*humMin*humMax*sistema"   ej. "@*2*6*80*95*1"
@@ -36,7 +36,9 @@ const unsigned long INTERVALO_REPORTE = 15UL * 60UL * 1000UL;
 const unsigned long INTERVALO_LECTURA = 2000UL;           // el DHT no da lecturas nuevas más rápido
 const unsigned long INTERVALO_LCD = 1000UL;
 const unsigned long ESPERA_ENTRE_ALARMAS = 5UL * 60UL * 1000UL;
-const unsigned long TIEMPO_MIN_APAGADO = 3UL * 60UL * 1000UL;  // evita arranques seguidos del compresor
+// Evita encender y apagar las celdas Peltier seguido: los ciclos térmicos rápidos acortan su vida
+// y los relés se desgastan al cortar corriente continua alta.
+const unsigned long TIEMPO_MIN_APAGADO = 60UL * 1000UL;
 const uint8_t LECTURAS_FALLIDAS_PARA_ERROR = 3;
 
 const int8_t TEMP_LIMITE_MIN = -30, TEMP_LIMITE_MAX = 50;
@@ -352,7 +354,7 @@ void setup() {
 
   leerSensor();
   ultimaLectura = millis();
-  ultimoApagado = millis();  // tras un corte de luz el compresor también espera el tiempo mínimo
+  ultimoApagado = millis();  // tras un corte de luz también se espera el tiempo mínimo
   ultimoReporte = millis();
   wdt_enable(WDTO_8S);  // si el programa se cuelga (I2C, GSM...), el Arduino se reinicia solo
 }

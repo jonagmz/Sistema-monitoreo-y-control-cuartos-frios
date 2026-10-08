@@ -18,11 +18,16 @@ Proyecto de residencia profesional. Un Arduino mide la temperatura y la humedad 
 | Módulo GSM SIM800L | RX del Arduino en pin 7, TX en pin 8 (SoftwareSerial, 9600 bps) |
 | Sensor DHT11 o DHT22 | Datos en pin 2 |
 | LCD 20x4 con adaptador I2C (0x27) | SDA en A4, SCL en A5 |
-| 4 módulos de relé activos en LOW | Pines 3, 4, 5 y 6 |
+| 4 módulos de relé activos en LOW (celdas Peltier) | Pines 3, 4, 5 y 6 |
 
 Recomendaciones:
 - **Usa un DHT22.** El DHT11 solo mide de 0 a 50 °C con ±2 °C, así que no sirve cerca o por debajo de 0 °C. El DHT22 mide de -40 a 80 °C con ±0.5 °C. Para congeladores o mayor precisión, un DS18B20 es todavía mejor (requiere cambiar el código de lectura).
 - **Alimenta el SIM800L aparte.** Al transmitir pide picos de hasta 2 A a 3.7–4.2 V. Si se alimenta del Arduino, se reinicia al enviar SMS.
+- **Celdas Peltier:**
+  - **Lado caliente:** necesita un disipador con ventilador funcionando siempre que la celda esté encendida. Si se calienta de más, la celda se daña en segundos y además calienta el cuarto. Conviene un termostato o fusible térmico (por ejemplo, un KSD301 de 60–70 °C) en el disipador, que corte la alimentación de la celda.
+  - **Relés o MOSFET:** cada celda consume varios amperios de corriente continua (4–10 A a 12 V). Revisa que los relés soporten esa corriente en DC; un MOSFET de potencia es más duradero y permitiría regular la potencia por PWM, que es más eficiente que encender y apagar.
+  - **Fuente:** calcula la corriente total de todas las celdas y los ventiladores, con margen.
+  - **Condensación:** el lado frío condensa humedad. Prevé por dónde escurre el agua.
 
 ## Firmware (Arduino)
 
@@ -40,7 +45,7 @@ Recomendaciones:
 ### Funcionamiento
 
 - **Control con histéresis:** enciende la refrigeración cuando la temperatura llega al máximo y la apaga al bajar al mínimo.
-- **Protección del compresor:** después de apagarse, la refrigeración no vuelve a arrancar antes de 3 minutos. Eso incluye el arranque tras un corte de luz.
+- **Protección de las celdas Peltier:** después de apagarse, no vuelven a encender antes de 60 segundos (también tras un corte de luz). Así se evitan los ciclos térmicos rápidos que acortan su vida y el desgaste de los relés.
 - **Configuración guardada en EEPROM:** se conserva aunque se vaya la luz. La primera vez, el sistema arranca apagado hasta recibir una configuración.
 - **Alarmas inmediatas:** si aparece o se resuelve una alarma (temperatura o humedad fuera de rango, o fallo del sensor), envía un SMS al momento. Como máximo manda uno cada 5 minutos.
 - **Reporte periódico** cada 15 minutos.

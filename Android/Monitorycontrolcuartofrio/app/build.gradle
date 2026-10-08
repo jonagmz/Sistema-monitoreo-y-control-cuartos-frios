@@ -29,6 +29,7 @@ android {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.8.0'
+    implementation 'androidx.activity:activity:1.9.3'
     // alinea kotlin-stdlib-jdk7/jdk8 que traen las dependencias de AndroidX
     implementation platform('org.jetbrains.kotlin:kotlin-bom:1.8.22')
     testImplementation 'junit:junit:4.13.2'

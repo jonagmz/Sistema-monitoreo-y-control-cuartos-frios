@@ -12,7 +12,7 @@ Revisión del firmware de Arduino y de la app Android. Severidad: 🔴 crítica 
 | 4 | 🟠 | Si el sensor fallaba, `readTemperature()` devolvía NaN y se usaba como temperatura para controlar. | Se detecta el fallo tras 3 lecturas: alarma por SMS, aviso en la LCD y "ND" en el reporte. |
 | 5 | 🟠 | Los límites se perdían en cada corte de luz (empezaban en 0). | Se guardan en EEPROM. |
 | 6 | 🟠 | Las alarmas solo se avisaban en el reporte de cada 15 minutos. | Se envía un SMS en cuanto aparece o se resuelve una alarma (como máximo uno cada 5 minutos). |
-| 7 | 🟠 | Sin protección del compresor: podía arrancar y parar seguido, incluso al volver la luz. | Tiempo mínimo de 3 minutos apagado antes de volver a arrancar. |
+| 7 | 🟠 | Las celdas Peltier podían encenderse y apagarse seguido (estrés térmico de la celda y desgaste de los relés con corriente continua). | Tiempo mínimo de 60 segundos apagadas antes de volver a encender, también tras un corte de luz. |
 | 8 | 🟠 | Si el programa se colgaba (I2C, GSM), el cuarto frío quedaba sin control. | Watchdog de 8 segundos. |
 | 9 | 🟡 | No se validaba la configuración (el mínimo podía ser mayor que el máximo, o recibir valores vacíos). | Se valida igual que en la app y se responde `ERROR` si no es válida. |
 | 10 | 🟡 | El sensor y la LCD se actualizaban en cada vuelta del loop. Leer el DHT desactiva interrupciones, y SoftwareSerial perdía caracteres de los SMS entrantes. | El sensor se lee cada 2 s y nunca mientras está llegando un SMS; la LCD se refresca cada segundo. |
@@ -38,18 +38,22 @@ Revisión del firmware de Arduino y de la app Android. Severidad: 🔴 crítica 
 | 25 | 🟡 | Pedía permiso y enviaba el SMS sin esperar la respuesta; además, nunca pedía `RECEIVE_SMS`. | Se piden todos los permisos al inicio y no se envía nada sin permiso. |
 | 26 | ⚪ | Número del equipo escrito en el código. | Se configura desde la app. |
 | 27 | ⚪ | No se sabía de cuándo era la última lectura. | Se muestra la fecha y hora. |
+| 29 | 🟠 | En Android 15 (targetSdk 35) la app se dibuja detrás de las barras del sistema: el título y la temperatura quedaban tapados por la barra superior. Lo encontró la prueba en el emulador. | Toolbar propia y márgenes de las barras del sistema y del teclado. |
 | 28 | ⚪ | Dependencia sin usar (`play-services-maps`), permiso innecesario (`READ_SMS`), diseño con medidas fijas que se cortaba en algunas pantallas y textos con faltas ("desesada"). | Eliminados y corregidos; diseño adaptable con scroll. |
 
 ## Verificación
 
 - Firmware: compila con `arduino-cli` para Arduino Uno, y la simulación `Arduino/pruebas/correr.sh` pasa 30 de 30 comprobaciones.
 - App: `./gradlew assembleDebug testDebugUnitTest lintDebug` termina sin errores; pasan 7 tests unitarios y lint no da errores.
-- No se probó en hardware real ni en un teléfono.
+- Prueba de punta a punta en el emulador (Android 15) con el firmware real ejecutándose como equipo virtual y SMS simulados: primer uso y permisos, pedir lecturas, enviar configuración, alarma de temperatura alta, fallo del sensor, notificaciones con la app cerrada y SMS falsos de otro número (ignorados, sin cierres).
+- No se probó en hardware real ni en un teléfono físico.
 
 ## Pendiente (requiere decisión o hardware)
 
 - **Datos personales en el historial de git:** los números de teléfono que estaban en el código siguen en commits antiguos de un repositorio público. Para borrarlos hay que reescribir el historial (`git filter-repo`) y forzar el push; si es posible, también conviene cambiar esos números.
 - **Sensor:** cambiar el DHT11 por un DHT22 o un DS18B20.
+- **Protección del lado caliente de las Peltier:** termostato o fusible térmico en el disipador, y ventiladores funcionando siempre que la celda esté encendida.
+- **MOSFET en lugar de relés:** más duradero con corriente continua alta y permitiría regular la potencia por PWM.
 - **Fuente del SIM800L:** debe dar 2 A en picos.
 - **Comprobar que los SMS llegan:** el firmware no confirma que cada SMS se haya enviado (respuesta `+CMGS`). Se podría reintentar en caso de fallo.
 - **Varios cuartos fríos:** la app maneja un solo equipo; para varios habría que guardar una lista de números.
