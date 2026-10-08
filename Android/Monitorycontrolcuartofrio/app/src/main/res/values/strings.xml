@@ -1,3 +1,59 @@
 <resources>
-    <string name="app_name">Monitor y control cuarto frio</string>
+    <string name="app_name">Monitor y control cuarto frío</string>
+
+    <string name="titulo_lecturas">Lecturas</string>
+    <string name="titulo_configuracion">Configuración</string>
+    <string name="temperatura">Temperatura</string>
+    <string name="humedad">Humedad</string>
+    <string name="nd">ND</string>
+    <string name="valor_temperatura">%1$s °C</string>
+    <string name="valor_humedad">%1$s %%</string>
+    <string name="sin_datos">Todavía no se ha recibido ningún reporte del equipo</string>
+    <string name="actualizado">Última lectura: %1$s</string>
+    <string name="sin_alarmas">Sin alarmas</string>
+    <string name="pedir_lecturas">Pedir lecturas ahora</string>
+
+    <string name="estado_enfriando">Estado: enfriando</string>
+    <string name="estado_reposo">Estado: en reposo</string>
+    <string name="estado_apagado">Estado: sistema apagado</string>
+    <string name="estado_error_sensor">Estado: error de sensor</string>
+    <string name="estado_no_disponible">Estado no disponible (firmware anterior)</string>
+    <string name="config_equipo">En el equipo: %1$d a %2$d °C, %3$d a %4$d %%, celdas %5$s</string>
+    <string name="encendido">encendidas</string>
+    <string name="apagado">apagadas</string>
+
+    <string name="temperatura_deseada">Temperatura deseada (°C)</string>
+    <string name="humedad_deseada">Humedad deseada (%)</string>
+    <string name="minima">Mínima</string>
+    <string name="maxima">Máxima</string>
+    <string name="encender_celdas">Encender celdas</string>
+    <string name="enviar_configuracion">Enviar configuración</string>
+
+    <string name="numero_equipo">Número del equipo: %1$s</string>
+    <string name="numero_no_configurado">Número del equipo sin configurar</string>
+    <string name="cambiar_numero_equipo">Cambiar número del equipo</string>
+    <string name="numero_equipo_titulo">Número del equipo</string>
+    <string name="numero_equipo_ayuda">Número del chip SIM instalado en el cuarto frío. Solo se aceptarán SMS de ese número.</string>
+    <string name="hint_numero_equipo">+52 667 000 0000</string>
+    <string name="guardar">Guardar</string>
+    <string name="cancelar">Cancelar</string>
+
+    <string name="sms_enviado">SMS enviado al equipo</string>
+    <string name="sms_no_enviado">No se pudo enviar el SMS. Revisa el saldo y la señal.</string>
+    <string name="falta_permiso_sms">Se necesita permiso para enviar SMS</string>
+
+    <string name="error_numero">Escribe un número entero</string>
+    <string name="error_numero_equipo">El número debe tener al menos 10 dígitos</string>
+    <string name="error_rango_temperatura">La temperatura debe estar entre -30 y 50 °C</string>
+    <string name="error_temp_min_mayor">La temperatura mínima debe ser menor que la máxima</string>
+    <string name="error_rango_humedad">La humedad debe estar entre 0 y 100 %</string>
+    <string name="error_hum_min_mayor">La humedad mínima debe ser menor que la máxima</string>
+
+    <string name="canal_alarmas">Alarmas del cuarto frío</string>
+    <string name="alarma_en">Alarma en %1$s</string>
+    <string name="alarma_sensor">Falla del sensor</string>
+    <string name="alarma_temp_alta">Temperatura alta (%1$s °C)</string>
+    <string name="alarma_temp_baja">Temperatura baja (%1$s °C)</string>
+    <string name="alarma_hum_alta">Humedad alta (%1$s %%)</string>
+    <string name="alarma_hum_baja">Humedad baja (%1$s %%)</string>
 </resources>
