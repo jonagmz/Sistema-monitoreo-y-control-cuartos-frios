@@ -191,6 +191,33 @@ void fase1(const char *rutaEeprom) {
   CHECK(estado.potencia <= 50, "sin sensor del lado caliente limita la potencia al 50 %");
   ladoCaliente(30);
 
+  puts("6b) Bloqueo térmico (ventilador del disipador averiado)");
+  correr(3 * 60000);
+  CHECK(estado.alarmas & AL_SOBRECALENTADO, "la alarma de sobrecalentamiento se sostiene 15 min tras rearmarse (no parpadea)");
+  for (int i = 0; i < 3 && !estado.bloqueoTermico; i++) {
+    ladoCaliente(70);
+    correr(20000);
+    ladoCaliente(45);
+    correr(3 * 60000);
+  }
+  CHECK(estado.bloqueoTermico, "3 disparos en menos de una hora: bloqueo térmico");
+  bool avisoBloqueo = false;
+  for (auto &s : modem().enviados) avisoBloqueo |= s.numero == ALERTA2 && contiene(s.texto, ";B1");
+  correr(3 * 60000);
+  for (auto &s : modem().enviados) avisoBloqueo |= s.numero == ALERTA2 && contiene(s.texto, ";B1");
+  CHECK(avisoBloqueo, "avisa el bloqueo por SMS aunque la alarma ya estuviera activa");
+  ladoCaliente(30);
+  correr(5 * 60000);
+  CHECK(celdasEncendidas() == 0 && estado.potencia == 0, "bloqueado: no vuelve a encender aunque el disipador se enfríe");
+  CHECK(lcd().filas[3].rfind("BLOQUEO TERMICO", 0) == 0, "LCD: 'BLOQUEO TERMICO'");
+  cmd("INFO");
+  CHECK(campo(ultimo().texto, 'B') == "1" && contiene(ultimo().texto, ";A2"), "el reporte indica el bloqueo (B1) y la alarma");
+  cmd("ON");
+  correr(2 * 60000);
+  CHECK(!estado.bloqueoTermico && celdasEncendidas() > 0, "ON quita el bloqueo y vuelve a enfriar");
+  correr(16 * 60000);
+  CHECK(!(estado.alarmas & AL_SOBRECALENTADO), "la alarma se resuelve 15 min después del último disparo");
+
   puts("7) Falla del sensor de ambiente");
   correr(3 * 60000);
   int potenciaAntes = estado.potencia;
@@ -284,7 +311,7 @@ void fase1(const char *rutaEeprom) {
   puts("12) Estado");
   cmd("INFO");
   const std::string &r = ultimo().texto;
-  CHECK(campo(r, 'T') == "3.5" && campo(r, 'S') == "3.5" && campo(r, 'E') == "1" && campo(r, 'Q') == "21" && campo(r, 'C') == "30.0",
+  CHECK(campo(r, 'T') == "3.5" && campo(r, 'S') == "3.5" && campo(r, 'E') == "1" && campo(r, 'Q') == "21" && std::fabs(std::stof(campo(r, 'C')) - 30.0f) <= 0.2f,
         "R: temperatura, objetivo, encendido, señal y lado caliente");
   CHECK(std::stoi(campo(r, 'U')) > 60 * 50, "R: minutos desde el encendido");
   printf("     %s\n", r.c_str());

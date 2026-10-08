@@ -1,0 +1,8 @@
+<resources>
+    <!-- Tema mínimo de la ventana; los colores reales los define Compose (ui/tema). -->
+    <style name="Theme.CuartoFrio" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/fondo</item>
+    </style>
+    <color name="fondo">#FFF6FAFE</color>
+    <color name="icono_fondo">#FF0B5CAD</color>
+</resources>

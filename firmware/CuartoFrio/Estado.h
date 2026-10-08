@@ -21,6 +21,8 @@ struct Estado {
   bool fallaAmbiente = false;
   bool fallaCaliente = false;
   bool protegiendo = false;     // celdas apagadas por sobrecalentamiento
+  bool bloqueoTermico = false;  // 3 disparos en 1 h: apagadas hasta recibir ON
+  uint32_t ultimoDisparo = 0;   // millis() del último sobrecalentamiento
   bool fallaEnfriamiento = false;
   uint8_t potencia = 0;         // % aplicado a las celdas
   uint8_t alarmas = 0;

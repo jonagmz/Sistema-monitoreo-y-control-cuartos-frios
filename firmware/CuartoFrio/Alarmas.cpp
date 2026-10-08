@@ -4,6 +4,8 @@
 #include "Estado.h"
 
 static const uint32_t MINIMO_ENTRE_AVISOS = 2UL * 60000UL;
+// La alarma de sobrecalentamiento sigue activa un rato tras rearmarse, para no avisar en cada ciclo.
+static const uint32_t SOSTENER_SOBRECALENTADO = 15UL * 60000UL;
 
 // Desde cuándo se cumple cada condición con retardo; el bit i de "cumpliendo" indica si se cumple.
 static uint32_t desde[4];
@@ -11,6 +13,7 @@ static uint8_t cumpliendo = 0;
 static const uint8_t CON_RETARDO[4] = {AL_TEMP_ALTA, AL_TEMP_BAJA, AL_HUM_ALTA, AL_HUM_BAJA};
 
 static uint8_t notificadas = 0, reconocidas = 0;
+static bool bloqueoNotificado = false;  // el bloqueo exige que alguien actúe: también se avisa aunque la máscara no cambie
 static uint32_t ultimoAviso = 0;
 static bool hayAvisoPrevio = false;
 
@@ -38,7 +41,10 @@ void alarmasActualizar(uint32_t ahora) {
   }
   // Las fallas de equipo avisan al momento.
   if (estado.fallaAmbiente) activas |= AL_SENSOR;
-  if (estado.protegiendo) activas |= AL_SOBRECALENTADO;
+  if (estado.protegiendo || estado.bloqueoTermico ||
+      (estado.ultimoDisparo && ahora - estado.ultimoDisparo < SOSTENER_SOBRECALENTADO)) {
+    activas |= AL_SOBRECALENTADO;
+  }
 #if USAR_SENSOR_CALIENTE
   if (estado.fallaCaliente) activas |= AL_SENSOR_CALIENTE;
 #endif
@@ -50,13 +56,14 @@ void alarmasActualizar(uint32_t ahora) {
 
 bool alarmasHayQueAvisar(uint32_t ahora) {
   bool espera = hayAvisoPrevio && ahora - ultimoAviso < MINIMO_ENTRE_AVISOS;
-  if (estado.alarmas != notificadas) return !espera;
+  if (estado.alarmas != notificadas || estado.bloqueoTermico != bloqueoNotificado) return !espera;
   uint8_t pendientes = estado.alarmas & ~reconocidas;
   return pendientes && ajustes.ra && ahora - ultimoAviso >= (uint32_t)ajustes.ra * 3600000UL;
 }
 
 void alarmasAvisoEnviado(uint32_t ahora) {
   notificadas = estado.alarmas;
+  bloqueoNotificado = estado.bloqueoTermico;
   ultimoAviso = ahora;
   hayAvisoPrevio = true;
 }

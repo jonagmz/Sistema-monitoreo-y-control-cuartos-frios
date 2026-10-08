@@ -1,91 +1,107 @@
-# Sistema de monitoreo y control de cuarto frío
+# Sistema de monitoreo y control de cuarto frío · v2
 
-Proyecto de residencia profesional. Un Arduino mide la temperatura y la humedad de un cuarto frío, enciende o apaga la refrigeración según los límites configurados y envía reportes y alarmas por SMS. Una app Android muestra las lecturas y permite cambiar la configuración a distancia, también por SMS. No hace falta internet: basta con señal celular.
+Control de un cuarto frío con **celdas Peltier**, monitoreado y configurado desde el celular por **SMS** (no necesita internet). Proyecto de residencia profesional, rediseñado en 2026.
 
 ```
-┌──────────────── Cuarto frío ────────────────┐            ┌──────── Celular ────────┐
-│ DHT ─► Arduino Uno ─► relés (refrigeración) │   SMS ◄──► │ App Android             │
-│           │  ▲                              │            │ lecturas, alarmas,      │
-│      LCD 20x4 SIM800L ◄─────────────────────┼────────────┤ configuración           │
-└─────────────────────────────────────────────┘            └─────────────────────────┘
+ Cuarto frío                                                        Celular
+┌──────────────────────────────────────────────────────┐          ┌──────────────────────────┐
+│ DHT (ambiente) ─┐                                    │          │ App Android (Compose)    │
+│ NTC (disipador) ┼─► Arduino Uno ─► 4 relés o 2 MOSFET│   SMS    │ · Panel en vivo          │
+│                 │   PID + alarmas  └► celdas Peltier │ ◄──────► │ · Historial y gráficas   │
+│        LCD 20x4 ┘   historial 48 h                   │          │ · Eventos y alarmas      │
+│                     SIM800L ─────────────────────────┼──────────┤ · Configuración remota   │
+└──────────────────────────────────────────────────────┘          └──────────────────────────┘
 ```
+
+## Qué hace
+
+**Equipo (firmware)**
+- **PID** de temperatura con anti-windup. Con los **4 relés** enciende de 0 a 4 celdas (control por etapas) y rota cuál arranca primero para repartir el desgaste. Con **MOSFET** regula la potencia por PWM a 25 kHz.
+- **Protección del lado caliente**: un termistor en el disipador reduce la potencia 10 °C antes del límite y apaga las celdas al alcanzarlo.
+- **Alarmas** de temperatura y humedad con retardo configurable (para no alarmar al abrir la puerta), falla de sensores, sobrecalentamiento y **falla de enfriamiento** (potencia máxima una hora sin bajar la temperatura). Avisa al momento, recuerda cada N horas y se pueden reconocer.
+- **Historial de 48 h** en la EEPROM: sobrevive a cortes de luz y se descarga a la app en unos 8 SMS.
+- **Aviso de corte de luz**: al volver la energía envía un SMS.
+- **Seguridad**: solo obedece a números autorizados **y** con PIN.
+- **Robustez**: nada bloquea el programa, el módulo GSM se reinicializa solo si deja de responder y hay watchdog.
+
+**App**
+- **Panel**: temperatura, tendencia, humedad, potencia, lado caliente, señal y alarmas con botón para reconocerlas.
+- **Historial**: gráficas de temperatura, humedad y celdas (6 h a 30 días), estadísticas y exportación a CSV.
+- **Eventos**: alarmas, cortes de luz, cambios de configuración y errores, agrupados por día.
+- **Ajustes**: objetivo, alarmas, retardos, potencia, límite del disipador, reportes y PID. Muestra si el equipo confirmó los cambios.
+- Notificaciones de alarma aunque la app esté cerrada. Tema claro y oscuro.
 
 ## Hardware
 
 | Componente | Conexión |
 |---|---|
 | Arduino Uno | — |
-| Módulo GSM SIM800L | RX del Arduino en pin 7, TX en pin 8 (SoftwareSerial, 9600 bps) |
-| Sensor DHT11 o DHT22 | Datos en pin 2 |
-| LCD 20x4 con adaptador I2C (0x27) | SDA en A4, SCL en A5 |
-| 4 módulos de relé activos en LOW (celdas Peltier) | Pines 3, 4, 5 y 6 |
+| SIM800L | RX del Arduino → pin 7, TX → pin 8. Fuente propia de 3.7–4.2 V capaz de dar **2 A en picos** |
+| DHT22 (recomendado) o DHT11 | Datos → pin 2 |
+| Termistor NTC 10 kΩ (B 3950) en el disipador | Entre A0 y GND, con una resistencia de 10 kΩ de A0 a 5 V |
+| LCD 20x4 I2C (0x27) | SDA → A4, SCL → A5 |
+| **Modo relés**: 4 relés activos en LOW | Pines 3, 4, 5 y 6 (una celda cada uno) |
+| **Modo PWM**: 2 MOSFET de nivel lógico (p. ej. IRLB8721) | Pines 9 y 10 (dos celdas cada uno), con diodo y disipador |
 
-Recomendaciones:
-- **Usa un DHT22.** El DHT11 solo mide de 0 a 50 °C con ±2 °C, así que no sirve cerca o por debajo de 0 °C. El DHT22 mide de -40 a 80 °C con ±0.5 °C. Para congeladores o mayor precisión, un DS18B20 es todavía mejor (requiere cambiar el código de lectura).
-- **Alimenta el SIM800L aparte.** Al transmitir pide picos de hasta 2 A a 3.7–4.2 V. Si se alimenta del Arduino, se reinicia al enviar SMS.
-- **Celdas Peltier:**
-  - **Lado caliente:** necesita un disipador con ventilador funcionando siempre que la celda esté encendida. Si se calienta de más, la celda se daña en segundos y además calienta el cuarto. Conviene un termostato o fusible térmico (por ejemplo, un KSD301 de 60–70 °C) en el disipador, que corte la alimentación de la celda.
-  - **Relés o MOSFET:** cada celda consume varios amperios de corriente continua (4–10 A a 12 V). Revisa que los relés soporten esa corriente en DC; un MOSFET de potencia es más duradero y permitiría regular la potencia por PWM, que es más eficiente que encender y apagar.
-  - **Fuente:** calcula la corriente total de todas las celdas y los ventiladores, con margen.
-  - **Condensación:** el lado frío condensa humedad. Prevé por dónde escurre el agua.
+Recomendaciones para las Peltier:
+- **Ventiladores** del lado caliente siempre encendidos mientras funcione la celda, y un **termostato o fusible térmico** en el disipador (p. ej. KSD301 de 70 °C) como protección independiente del Arduino.
+- Revisa que los relés soporten la **corriente continua** de cada celda (4 a 10 A). Los MOSFET duran más y permiten regular la potencia.
+- Calcula la **fuente** para todas las celdas y los ventiladores, con margen. Prevé el drenaje de la **condensación**.
+- El DHT11 no mide por debajo de 0 °C: para congelación usa DHT22.
 
-## Firmware (Arduino)
+## Firmware
 
-1. Instala desde el gestor de librerías del Arduino IDE:
-   - *DHT sensor library* (Adafruit) y *Adafruit Unified Sensor*
-   - *LiquidCrystal I2C* (Frank de Brabander)
-2. Copia `Arduino/cuartoFrio/config.example.h` como `config.h` en la misma carpeta y pon tus datos:
-   - `NUMERO_REPORTES`: el celular que recibe reportes y alarmas.
-   - `NUMEROS_AUTORIZADOS`: los celulares que pueden cambiar la configuración. **Los SMS de cualquier otro número se ignoran.**
-   - `TIPO_SENSOR`: `DHT11` o `DHT22`.
+1. Instala desde el gestor de librerías del Arduino IDE: *DHT sensor library* y *Adafruit Unified Sensor* (Adafruit), y *LiquidCrystal I2C* (Frank de Brabander).
+2. Copia `firmware/CuartoFrio/config.example.h` como `config.h` y ajusta números, PIN, sensor y modo de salida. `config.h` no se sube a git.
+3. Abre `firmware/CuartoFrio/CuartoFrio.ino` y súbelo a un Arduino Uno. Ocupa 69 % de la flash y 70 % de la RAM.
 
-   `config.h` está en `.gitignore` para que los números reales no se suban al repositorio.
-3. Abre `Arduino/cuartoFrio/cuartoFrio.ino`, selecciona **Arduino Uno** y súbelo.
+Al primer arranque el control está **apagado**: se enciende desde la app.
 
-### Funcionamiento
+| Módulo | Qué hace |
+|---|---|
+| `Hal` | Único módulo que toca pines y registros: relés, PWM a 25 kHz, ADC y causa del arranque |
+| `Ajustes` | Configuración en EEPROM con CRC; una tabla define claves, rangos y formato |
+| `Sensores` | DHT con mediana de 3 lecturas; NTC con promedio y detección de cable abierto o en corto |
+| `Control` | PID, etapas o PWM con rampa, límite por lado caliente y detección de falla de enfriamiento |
+| `Alarmas` | Retardos, avisos, recordatorios y reconocimiento |
+| `Historial` | Buffer circular en EEPROM sin puntero (no desgasta una celda) y páginas para SMS |
+| `Gsm` | Máquina de estados del SIM800L con cola, reintentos y recuperación |
+| `Mensajes` | Comandos recibidos y mensajes salientes |
+| `Pantalla` | LCD con lecturas, objetivo, celdas o potencia y alarmas rotativas |
 
-- **Control con histéresis:** enciende la refrigeración cuando la temperatura llega al máximo y la apaga al bajar al mínimo.
-- **Protección de las celdas Peltier:** después de apagarse, no vuelven a encender antes de 60 segundos (también tras un corte de luz). Así se evitan los ciclos térmicos rápidos que acortan su vida y el desgaste de los relés.
-- **Configuración guardada en EEPROM:** se conserva aunque se vaya la luz. La primera vez, el sistema arranca apagado hasta recibir una configuración.
-- **Alarmas inmediatas:** si aparece o se resuelve una alarma (temperatura o humedad fuera de rango, o fallo del sensor), envía un SMS al momento. Como máximo manda uno cada 5 minutos.
-- **Reporte periódico** cada 15 minutos.
-- **Fallo del sensor:** tras 3 lecturas fallidas, mantiene el estado actual de la refrigeración, avisa por SMS y muestra "ERROR DE SENSOR" en la pantalla.
-- **Watchdog:** si el programa se cuelga, el Arduino se reinicia solo en 8 segundos.
-
-### Pruebas
-
-`Arduino/pruebas/correr.sh` compila el sketch en la computadora, simulando el Arduino, el SIM800L, el sensor, la LCD y la EEPROM, y comprueba 30 escenarios: SMS no autorizados, histéresis, protección del compresor, alarmas, fallo del sensor, corte de luz, etc.
+### Pruebas sin hardware
 
 ```sh
-./Arduino/pruebas/correr.sh
+./firmware/pruebas/correr.sh
 ```
+
+Compila el firmware real para la computadora con el hardware simulado (SIM800L que responde como el real, DHT, NTC, LCD y EEPROM). Ejecuta **130 comprobaciones** en los dos modos de salida: seguridad, comandos, PID por etapas y PWM, protección térmica, fallas de sensores, alarmas con retardo y recordatorio, falla de enfriamiento, historial de 48 h, módulo GSM que deja de responder y corte de luz.
 
 ## App Android
 
-Requisitos: Android 6.0 o superior, con línea celular capaz de enviar y recibir SMS.
+Requisitos: Android 8.0 o superior, con línea celular. Abre `android/` en Android Studio, o compila con `./gradlew assembleDebug`.
 
-1. Abre `Android/Monitorycontrolcuartofrio` en Android Studio (Ladybug o más reciente) y ejecútala. También puedes compilarla con `./gradlew assembleDebug`.
-2. La primera vez:
-   - Acepta los permisos de **SMS** y **notificaciones**.
-   - Escribe el **número del chip del equipo**. La app solo hace caso a los SMS de ese número.
-3. Usa **Pedir lecturas ahora** para recibir un reporte al momento, o **Enviar configuración** para cambiar los límites y encender o apagar las celdas.
+Primer uso: escribe el número del chip del equipo y el PIN. La app pide la configuración y las lecturas.
 
-La app recibe los reportes aunque esté cerrada, guarda el último y muestra una notificación cuando hay una alarma.
+Kotlin, Jetpack Compose y Material 3. Arquitectura MVVM con un repositorio, Room (lecturas y eventos) y DataStore. Las pruebas del protocolo se ejecutan con `./gradlew testDebugUnitTest`.
 
-> Google Play solo permite permisos de SMS a las apps de mensajería predeterminadas, así que esta app debe instalarse directamente desde el APK, no desde Play Store.
+> Google Play solo permite permisos de SMS a las apps de mensajería predeterminadas: la app se instala desde el APK.
 
-Pruebas unitarias: `./gradlew testDebugUnitTest`.
+## Simulador (demostración sin hardware)
 
-## Protocolo SMS
+`herramientas/simulador` ejecuta el **firmware real** con un modelo térmico de cuarto frío con Peltier (fugas, puerta abierta, falla del ventilador) y lo conecta por SMS simulados con la app en un emulador Android:
 
-| Dirección | Texto | Ejemplo |
-|---|---|---|
-| App → equipo | `@*tempMin*tempMax*humMin*humMax*sistema` | `@*2*6*80*95*1` |
-| App → equipo | `INFO` (pide un reporte al momento) | `INFO` |
-| Equipo → app | `temp,hum,ubicacion,alarmaTempBaja,alarmaTempAlta,alarmaHumBaja,alarmaHumAlta,errorSensor,enfriando,sistema,tempMin,tempMax,humMin,humMax` | `4.5,85.0,Cuarto frio no. 1,0,0,0,0,0,1,1,2,6,80,95` |
-| Equipo → app | `ERROR: ...` si la configuración no es válida | — |
+```sh
+./herramientas/simulador/compilar.sh
+ANDROID_HOME=~/Library/Android/sdk python3 herramientas/simulador/puente.py
+```
 
-Límites: temperatura de -30 a 50 °C, humedad de 0 a 100 %, y el mínimo debe ser menor que el máximo. Los 7 primeros campos del reporte son los del formato original, así que la versión anterior de la app sigue leyéndolos.
+En la app usa el número `6670000001` y el PIN `4321`. Con `echo "VELOCIDAD 60" >> herramientas/simulador/control.txt` pasa una hora por minuto.
+
+## Documentación
+
+- [Protocolo SMS](docs/PROTOCOLO.md)
+- [Auditoría de la versión 1](docs/AUDITORIA.md)
 
 ## Licencia
 

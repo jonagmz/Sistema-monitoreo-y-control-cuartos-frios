@@ -17,7 +17,7 @@ CF2 <PIN> <COMANDO> [argumentos]
 | `INFO` | `R` | Estado actual |
 | `CFG` | `C` | Configuración actual |
 | `SET k=v [k=v ...]` | `C` o `X` | Cambia ajustes. Se validan todos antes de aplicar ninguno |
-| `ON` / `OFF` | `C` | Enciende o apaga el control (equivale a `SET EN=1` / `SET EN=0`) |
+| `ON` / `OFF` | `C` | Enciende o apaga el control (equivale a `SET EN=1` / `SET EN=0`). `ON` también quita el bloqueo térmico |
 | `HIST [horas]` | `H` (varios) | Historial guardado en el equipo (por defecto 48 h) |
 | `ACK` | `R` | Reconoce las alarmas activas: deja de enviar recordatorios hasta que aparezca una nueva |
 
@@ -46,7 +46,7 @@ Todos empiezan con `CF2;<tipo>;` y siguen con campos `clave valor` pegados (`T4.
 ### `R`: estado
 
 ```
-CF2;R;T4.5;H85;C32.1;P45;E1;A0;S4.0;Q21;U1234
+CF2;R;T4.5;H85;C32.1;P45;E1;A0;S4.0;Q21;U1234;B0
 ```
 
 | Campo | Significado |
@@ -60,6 +60,7 @@ CF2;R;T4.5;H85;C32.1;P45;E1;A0;S4.0;Q21;U1234
 | `S` | Temperatura objetivo (°C) |
 | `Q` | Señal del módulo GSM (0 a 31; 99 = desconocida) |
 | `U` | Minutos desde el último encendido |
+| `B` | Bloqueo térmico (1): la protección del lado caliente saltó 3 veces en una hora y las celdas quedan apagadas hasta recibir `ON` |
 
 | Bit | Alarma |
 |---|---|
@@ -68,7 +69,7 @@ CF2;R;T4.5;H85;C32.1;P45;E1;A0;S4.0;Q21;U1234
 | 0x04 | Humedad alta |
 | 0x08 | Humedad baja |
 | 0x10 | Falla del sensor de ambiente |
-| 0x20 | Lado caliente sobrecalentado (celdas apagadas por protección) |
+| 0x20 | Lado caliente sobrecalentado (celdas apagadas por protección). Sigue activa 15 min tras rearmarse |
 | 0x40 | Falla del sensor del lado caliente |
 | 0x80 | Falla de enfriamiento (potencia alta mucho tiempo sin que baje la temperatura) |
 

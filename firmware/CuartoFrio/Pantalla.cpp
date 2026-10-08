@@ -75,7 +75,9 @@ void pantallaActualizar(uint32_t ahora) {
 #endif
   renglon(2, t);
 
-  if (estado.alarmas) {
+  if (estado.bloqueoTermico) {
+    renglon(3, "BLOQUEO TERMICO");
+  } else if (estado.alarmas) {
     // Si hay varias alarmas se van turnando cada segundo.
     for (uint8_t i = 0; i < 8; i++) {
       alarmaMostrada = (alarmaMostrada + 1) % 8;

@@ -2,6 +2,7 @@
 #include "Ajustes.h"
 #include "Alarmas.h"
 #include "Configuracion.h"
+#include "Control.h"
 #include "Estado.h"
 #include "Gsm.h"
 #include "Historial.h"
@@ -96,6 +97,7 @@ void mensajeRecibido(const char *numero, const char *texto) {
     comandoSet(cursor);
   } else if (!strcasecmp_P(t, PSTR("ON")) || !strcasecmp_P(t, PSTR("OFF"))) {
     ajustes.en = !strcasecmp_P(t, PSTR("ON"));
+    if (ajustes.en) controlDesbloquear();  // alguien revisó el equipo y lo vuelve a encender
     ajustesGuardar();
     responder('C');
   } else if (!strcasecmp_P(t, PSTR("ACK"))) {
@@ -141,7 +143,7 @@ size_t mensajeConstruir(const Envio &envio, char *destino, size_t tamano, uint32
       n = agregarDecimas(destino, n, tamano, 'C', estado.caliente);
       n = agregar(destino, n, tamano, ";P%u;E%u;A%X", estado.potencia, ajustes.en, estado.alarmas);
       n = agregarDecimas(destino, n, tamano, 'S', ajustes.sp);
-      n = agregar(destino, n, tamano, ";Q%u;U%lu", estado.senal, (unsigned long)estado.minutosEncendido);
+      n = agregar(destino, n, tamano, ";Q%u;U%lu;B%u", estado.senal, (unsigned long)estado.minutosEncendido, estado.bloqueoTermico);
       return n;
     case 'C':
       n = agregar(destino, n, tamano, "CF2;C;");

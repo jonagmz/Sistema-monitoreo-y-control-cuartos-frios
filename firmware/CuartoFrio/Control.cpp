@@ -20,6 +20,13 @@ static uint32_t ultimoControl = 0;
 static uint8_t etapas = 0, primeraCelda = 0;
 static uint32_t ultimoCambioEtapa = 0;
 
+// Bloqueo térmico: si la protección salta DISPAROS_PARA_BLOQUEO veces en VENTANA_BLOQUEO, casi seguro falló el
+// ventilador del disipador. Rearmar una y otra vez solo estresa las celdas y manda un SMS tras otro.
+static const uint8_t DISPAROS_PARA_BLOQUEO = 3;
+static const uint32_t VENTANA_BLOQUEO = 60UL * 60000UL;
+static uint32_t disparos[DISPAROS_PARA_BLOQUEO];
+static uint8_t numDisparos = 0;
+
 static uint32_t inicioVentanaFalla = 0;
 static int16_t tempInicioVentana = SIN_DATO;
 
@@ -28,11 +35,29 @@ void controlIniciar(uint32_t ahora) {
   ultimoCambioEtapa = ahora - TIEMPO_ENTRE_ETAPAS;
 }
 
-uint8_t limitePorLadoCaliente(int16_t caliente, bool fallaSensor, uint8_t maximoC) {
+void controlDesbloquear() {
+  estado.bloqueoTermico = false;
+  numDisparos = 0;
+}
+
+static void registrarDisparo(uint32_t ahora) {
+  estado.ultimoDisparo = ahora;
+  // Se guardan los últimos disparos; si el más antiguo de los 3 fue hace menos de una hora, se bloquea.
+  if (numDisparos < DISPAROS_PARA_BLOQUEO) {
+    disparos[numDisparos++] = ahora;
+  } else {
+    for (uint8_t i = 1; i < DISPAROS_PARA_BLOQUEO; i++) disparos[i - 1] = disparos[i];
+    disparos[DISPAROS_PARA_BLOQUEO - 1] = ahora;
+  }
+  if (numDisparos == DISPAROS_PARA_BLOQUEO && ahora - disparos[0] < VENTANA_BLOQUEO) estado.bloqueoTermico = true;
+}
+
+uint8_t limitePorLadoCaliente(int16_t caliente, bool fallaSensor, uint8_t maximoC, uint32_t ahora) {
 #if !USAR_SENSOR_CALIENTE
-  (void)caliente; (void)fallaSensor; (void)maximoC;
+  (void)caliente; (void)fallaSensor; (void)maximoC; (void)ahora;
   return 100;
 #else
+  if (estado.bloqueoTermico) return 0;
   if (fallaSensor || caliente == SIN_DATO) {
     estado.protegiendo = false;
     return LIMITE_SIN_SENSOR;
@@ -44,6 +69,7 @@ uint8_t limitePorLadoCaliente(int16_t caliente, bool fallaSensor, uint8_t maximo
   }
   if (caliente >= maximo) {
     estado.protegiendo = true;
+    registrarDisparo(ahora);
     return 0;
   }
   if (caliente > maximo - 100) return (uint8_t)(maximo - caliente);  // de 100 % a 0 % en los últimos 10 °C (100 décimas)
@@ -131,7 +157,7 @@ static void vigilarEnfriamiento(uint32_t ahora) {
 void controlActualizar(uint32_t ahora) {
   float dtMin = (ahora - ultimoControl) / 60000.0f;
   ultimoControl = ahora;
-  uint8_t limite = limitePorLadoCaliente(estado.caliente, estado.fallaCaliente, ajustes.pc);
+  uint8_t limite = limitePorLadoCaliente(estado.caliente, estado.fallaCaliente, ajustes.pc, ahora);
 
   if (!ajustes.en) {
     integral = 0;
